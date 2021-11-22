@@ -32,7 +32,7 @@ contract SimpleVoting {
     function startVoting() external  {
         require(owner == msg.sender);
         require(started == false);
-        expiration = block.timestamp + 10 seconds;
+        expiration = block.timestamp + 10 seconds; //you can change this.i set to 10 seconds so i can play with it and still can wait for expiration.
         started = true;
     }
     
