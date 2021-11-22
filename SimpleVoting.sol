@@ -3,7 +3,7 @@
 pragma solidity ^0.8.7;
 
 /**
- * @title Simple voting contract
+ * @title Simple voting contract from hardcod3d.eth
  */
  
 contract SimpleVoting {
