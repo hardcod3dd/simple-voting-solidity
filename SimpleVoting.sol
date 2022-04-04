@@ -14,7 +14,10 @@ contract SimpleVoting {
     uint public countB;
     bool public started;
     address owner;
-    
+    address sender;
+    // create mapping so users can only vote once
+    mapping(address => bool) public hasVoted;
+
     //Set deployer as owner
     constructor() {
         owner = msg.sender;
@@ -25,6 +28,13 @@ contract SimpleVoting {
     modifier expiredOrNot {
         require(block.timestamp < expiration);
         require(started == true);
+        _;
+    }
+
+   // modifier to check if user voted before 
+
+    modifier checkVoted {
+        require(hasVoted[msg.sender] == false);
         _;
     }
     
@@ -52,18 +62,19 @@ contract SimpleVoting {
     
     
     //Add +1 to voteA or voteB .Looking for ways to allow only 1 vote for 1 address or only vote for a or b.
-    function voteA() external expiredOrNot {
+    function voteA() external expiredOrNot checkVoted {
         countA += 1;
+        hasVoted[msg.sender] = true;
     }
-     function voteB() external expiredOrNot {
+     function voteB() external expiredOrNot checkVoted {
         countB += 1;
+        hasVoted[msg.sender] = true;
     }
     
     //get total vote count
-    function getTotalVotes() external view returns(uint _totalVotesA, uint _totalVotesB) {
-        uint votesA = countA;
-        uint votesB = countB;
-        return(votesA, votesB);
+    function getTotalVotes() external view returns(uint) {
+        uint totalvotes = countA + countB;
+        return(totalvotes);
     }
     
 }

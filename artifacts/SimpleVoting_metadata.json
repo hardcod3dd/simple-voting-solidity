@@ -55,13 +55,27 @@
 				"outputs": [
 					{
 						"internalType": "uint256",
-						"name": "_totalVotesA",
+						"name": "",
 						"type": "uint256"
-					},
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
 					{
-						"internalType": "uint256",
-						"name": "_totalVotesB",
-						"type": "uint256"
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"name": "hasVoted",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
 					}
 				],
 				"stateMutability": "view",
@@ -118,7 +132,7 @@
 		"devdoc": {
 			"kind": "dev",
 			"methods": {},
-			"title": "Simple voting contract",
+			"title": "Simple voting contract from hardcod3d.eth",
 			"version": 1
 		},
 		"userdoc": {
@@ -144,11 +158,11 @@
 	},
 	"sources": {
 		"contracts/SimpleVoting.sol": {
-			"keccak256": "0x8d592788858d178d2f7389ce076ee95d94ba6613028f137b98d631ccbd3e2d73",
+			"keccak256": "0x9d516e54461069448d9434f36ad1060869efe5e2b8446a990e4b8853c12f7116",
 			"license": "GPL-3.0",
 			"urls": [
-				"bzz-raw://61d776b763ef4c9a93b3ae9aab5a90465d2e156e9abba4d515710e347a7c4cf9",
-				"dweb:/ipfs/QmShfzjxBEBhGMEbiEeQqAZUsc2gkA53vNqF99fsjjWa96"
+				"bzz-raw://e2df79b67fbf384cbdacb316b2519ad4411ac8406156250c205379cb45812156",
+				"dweb:/ipfs/QmRYjDYqLiaR2oC4HVgoB4UNZtgcTQFKKLLQ6CoZQyUZtp"
 			]
 		}
 	},
