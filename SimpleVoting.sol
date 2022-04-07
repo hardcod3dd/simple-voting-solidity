@@ -13,7 +13,7 @@ contract SimpleVoting {
     uint public countA;
     uint public countB;
     bool public started;
-    address owner;
+    address public owner;
     address sender;
     // create mapping so users can only vote once
     mapping(address => bool) public hasVoted;
@@ -32,23 +32,31 @@ contract SimpleVoting {
     }
 
    // modifier to check if user voted before 
-
     modifier checkVoted {
         require(hasVoted[msg.sender] == false);
         _;
     }
     
+    //onlyowner modifier
+    modifier onlyOwner {
+        require (owner == msg.sender);
+        _;
+    }
+
+    //function to change owner
+    function changeOwner(address _owner) external {
+        owner = _owner;
+    }
+
     //Start the voting.If time expires you need to invoke stopVoting function to be able to start again
-    function startVoting() external  {
-        require(owner == msg.sender);
+    function startVoting() external onlyOwner {
         require(started == false);
-        expiration = block.timestamp + 10 seconds; //you can change this.i set to 10 seconds so i can play with it and still can wait for expiration.
+        expiration = block.timestamp + 2 minutes; //you can change this.i set to 10 seconds so i can play with it and still can wait for expiration.
         started = true;
     }
     
     //Stop voting and reset variables if _reset passed true by owner.Else voting info stays.
-    function stopVoting(bool _reset) external {
-        require(owner == msg.sender);
+    function stopVoting(bool _reset) external onlyOwner {
         if(_reset == true) {
         started = false;
         countA = 0;
@@ -61,7 +69,7 @@ contract SimpleVoting {
     }
     
     
-    //Add +1 to voteA or voteB .Looking for ways to allow only 1 vote for 1 address or only vote for a or b.
+    //Add +1 to voteA or voteB 
     function voteA() external expiredOrNot checkVoted {
         countA += 1;
         hasVoted[msg.sender] = true;

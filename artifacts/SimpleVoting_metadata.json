@@ -11,6 +11,19 @@
 				"type": "constructor"
 			},
 			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_owner",
+						"type": "address"
+					}
+				],
+				"name": "changeOwner",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
 				"inputs": [],
 				"name": "countA",
 				"outputs": [
@@ -76,6 +89,19 @@
 						"internalType": "bool",
 						"name": "",
 						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "owner",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
 					}
 				],
 				"stateMutability": "view",
@@ -158,11 +184,11 @@
 	},
 	"sources": {
 		"contracts/SimpleVoting.sol": {
-			"keccak256": "0x9d516e54461069448d9434f36ad1060869efe5e2b8446a990e4b8853c12f7116",
+			"keccak256": "0x3b3708e3b682a81079fbb3f0b448731808156efacbf6fac6be0078726fc4fd58",
 			"license": "GPL-3.0",
 			"urls": [
-				"bzz-raw://e2df79b67fbf384cbdacb316b2519ad4411ac8406156250c205379cb45812156",
-				"dweb:/ipfs/QmRYjDYqLiaR2oC4HVgoB4UNZtgcTQFKKLLQ6CoZQyUZtp"
+				"bzz-raw://20291fb8c67027ed70adeed8526a88befc6dd09ed493f4c076ec6f20d40cda0e",
+				"dweb:/ipfs/QmadDhez5DS7DD62NPQ7qpJS3hYTaLJL5pgmwZY6F88Civ"
 			]
 		}
 	},
