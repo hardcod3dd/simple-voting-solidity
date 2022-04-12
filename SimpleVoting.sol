@@ -54,7 +54,13 @@ contract SimpleVoting {
         expiration = block.timestamp + 2 minutes; //you can change this.i set to 10 seconds so i can play with it and still can wait for expiration.
         started = true;
     }
-    
+
+    // function to reset status
+    function resetEntered() external {
+        require(started == false);
+        hasVoted[msg.sender] = false;
+    }
+
     //Stop voting and reset variables if _reset passed true by owner.Else voting info stays.
     function stopVoting(bool _reset) external onlyOwner {
         if(_reset == true) {
@@ -69,7 +75,7 @@ contract SimpleVoting {
     }
     
     
-    //Add +1 to voteA or voteB 
+    //Add +1 to voteA or voteB .Looking for ways to allow only 1 vote for 1 address or only vote for a or b.
     function voteA() external expiredOrNot checkVoted {
         countA += 1;
         hasVoted[msg.sender] = true;
