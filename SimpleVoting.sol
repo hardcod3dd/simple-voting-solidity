@@ -44,7 +44,7 @@ contract SimpleVoting {
     }
 
     //function to change owner
-    function changeOwner(address _owner) external {
+    function changeOwner(address _owner) external onlyOwner {
         owner = _owner;
     }
 
