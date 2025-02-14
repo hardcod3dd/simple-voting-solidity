@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Voting DApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .admin-section {
+            background: #fff3cd;
+        }
+
+        .status {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 5px;
+        }
+
+        .active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .countdown {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .votes {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .vote-option {
+            text-align: center;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 5px;
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .wallet-info {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="section">
+        <h1>Simple Voting DApp</h1>
+        <button id="connectButton">Connect Wallet</button>
+        <div id="walletInfo" class="wallet-info"></div>
+        <div id="messageBox" style="display: none;" class="message"></div>
+    </div>
+
+    <div class="section admin-section" id="adminSection" style="display: none;">
+        <h2>Admin Controls</h2>
+        <button id="startVoting">Start Voting</button>
+        <button id="stopVoting">Stop Voting</button>
+        <label>
+            <input type="checkbox" id="resetCheckbox"> Reset counts
+        </label>
+    </div>
+
+    <div class="section">
+        <div id="status" class="status inactive">Voting: Not Started</div>
+        <div id="countdown" class="countdown" style="display: none;"></div>
+        
+        <div class="votes">
+            <div class="vote-option">
+                <h3>Option A</h3>
+                <p id="countA">0</p>
+                <button id="voteA" disabled>Vote A</button>
+            </div>
+            
+            <div class="vote-option">
+                <h3>Option B</h3>
+                <p id="countB">0</p>
+                <button id="voteB" disabled>Vote B</button>
+            </div>
+        </div>
+        
+        <div>Total Votes: <span id="totalVotes">0</span></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.2.0/ethers.umd.min.js"></script>
+    <script>
+        const contractAddress = '0xc2faA24d25E5EcD3F16439369172e3D91778B114';
+        const contractABI = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"name":"changeOwner","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"countA","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"countB","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"expiration","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getTotalVotes","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"hasVoted","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"resetEntered","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"startVoting","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"started","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bool","name":"_reset","type":"bool"}],"name":"stopVoting","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"voteA","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"voteB","outputs":[],"stateMutability":"nonpayable","type":"function"}];
+
+        let provider, signer, contract, currentAccount;
+        let countdownInterval;
+
+        // Helper function to detect Ethereum provider
+        function detectEthereum() {
+            const { ethereum } = window;
+            if (ethereum && ethereum.isMetaMask) {
+                return ethereum;
+            }
+            
+            // Check for ethereum in different contexts (some mobile browsers/wallets)
+            if (window.web3 && window.web3.currentProvider && window.web3.currentProvider.isMetaMask) {
+                return window.web3.currentProvider;
+            }
+            
+            return null;
+        }
+
+        // Helper function to show messages
+        function showMessage(message, isError = false) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = `message ${isError ? 'error' : 'success'}`;
+            messageBox.style.display = 'block';
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                messageBox.style.display = 'none';
+            }, 5000);
+        }
+
+        async function handleAccountsChanged(accounts) {
+            if (accounts.length === 0) {
+                document.getElementById('walletInfo').textContent = '';
+                document.getElementById('connectButton').textContent = 'Connect Wallet';
+                showMessage('Wallet disconnected', true);
+            } else if (accounts[0] !== currentAccount) {
+                currentAccount = accounts[0];
+                document.getElementById('walletInfo').textContent = `Connected: ${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`;
+                await updateUI();
+                showMessage('Account changed');
+            }
+        }
+
+        async function updateUI() {
+            try {
+                if (!contract || !currentAccount) return;
+                
+                const isOwner = await checkIfOwner();
+                document.getElementById('adminSection').style.display = isOwner ? 'block' : 'none';
+
+                const started = await contract.started();
+                const statusElement = document.getElementById('status');
+                statusElement.className = started ? 'status active' : 'status inactive';
+                statusElement.textContent = `Voting: ${started ? 'Active' : 'Inactive'}`;
+
+                // Update counts
+                const countA = await contract.countA();
+                const countB = await contract.countB();
+                document.getElementById('countA').textContent = countA.toString();
+                document.getElementById('countB').textContent = countB.toString();
+                document.getElementById('totalVotes').textContent = (parseInt(countA) + parseInt(countB)).toString();
+
+                // Update voting buttons
+                if (started) {
+                    const hasVoted = await contract.hasVoted(currentAccount);
+                    document.getElementById('voteA').disabled = hasVoted;
+                    document.getElementById('voteB').disabled = hasVoted;
+                    startCountdown();
+                } else {
+                    document.getElementById('countdown').style.display = 'none';
+                    document.getElementById('voteA').disabled = true;
+                    document.getElementById('voteB').disabled = true;
+                    clearInterval(countdownInterval);
+                }
+            } catch (error) {
+                console.error('Error updating UI:', error);
+                showMessage('Error updating UI', true);
+            }
+        }
+
+        async function checkIfOwner() {
+            try {
+                const owner = await contract.owner();
+                return currentAccount?.toLowerCase() === owner.toLowerCase();
+            } catch (error) {
+                console.error('Error checking owner:', error);
+                return false;
+            }
+        }
+
+        async function startCountdown() {
+            try {
+                const expiration = await contract.expiration();
+                const expirationNum = parseInt(expiration.toString());
+                document.getElementById('countdown').style.display = 'block';
+                
+                function update() {
+                    const now = Math.floor(Date.now() / 1000);
+                    const remaining = expirationNum - now;
+                    
+                    if (remaining <= 0) {
+                        document.getElementById('countdown').textContent = 'Voting Expired';
+                        clearInterval(countdownInterval);
+                        // Auto-update UI when expired
+                        updateUI();
+                        return;
+                    }
+                    
+                    const minutes = Math.floor(remaining / 60);
+                    const seconds = remaining % 60;
+                    document.getElementById('countdown').textContent = 
+                        `Time Remaining: ${minutes}m ${seconds}s`;
+                }
+
+                update();
+                clearInterval(countdownInterval);
+                countdownInterval = setInterval(update, 1000);
+            } catch (error) {
+                console.error('Error starting countdown:', error);
+            }
+        }
+
+        async function connectWallet() {
+            const ethereum = detectEthereum();
+            
+            if (!ethereum) {
+                showMessage('MetaMask not detected. Please install MetaMask and refresh the page.', true);
+                window.open('https://metamask.io/download.html', '_blank');
+                return;
+            }
+            
+            try {
+                // Request account access
+                const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Initialize provider and get current account
+                provider = new ethers.providers.Web3Provider(ethereum);
+                signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                currentAccount = accounts[0];
+                
+                document.getElementById('walletInfo').textContent = 
+                    `Connected: ${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`;
+                document.getElementById('connectButton').textContent = 'Connected';
+                
+                // Set up event listeners
+                ethereum.on('accountsChanged', handleAccountsChanged);
+                ethereum.on('chainChanged', () => window.location.reload());
+                
+                await updateUI();
+                showMessage('Successfully connected to wallet');
+            } catch (error) {
+                console.error('Error connecting:', error);
+                if (error.code === 4001) {
+                    // User rejected the connection
+                    showMessage('Connection rejected. Please connect to MetaMask to use this application.', true);
+                } else {
+                    showMessage('Error connecting to MetaMask. Please make sure it is unlocked and try again.', true);
+                }
+            }
+        }
+
+        async function initApp() {
+            console.log("Initializing app...");
+            console.log("MetaMask detected:", !!detectEthereum());
+            console.log("window.ethereum exists:", !!window.ethereum);
+            console.log("window.web3 exists:", !!window.web3);
+            
+            const ethereum = detectEthereum();
+            
+            if (!ethereum) {
+                document.getElementById('connectButton').textContent = 'Install MetaMask';
+                document.getElementById('connectButton').addEventListener('click', () => {
+                    window.open('https://metamask.io/download.html', '_blank');
+                });
+                showMessage('MetaMask not detected. Please install MetaMask to use this DApp.', true);
+                return;
+            }
+
+            try {
+                // Check if already connected
+                const accounts = await ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    provider = new ethers.providers.Web3Provider(ethereum);
+                    signer = provider.getSigner();
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    currentAccount = accounts[0];
+                    
+                    document.getElementById('walletInfo').textContent = 
+                        `Connected: ${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`;
+                    document.getElementById('connectButton').textContent = 'Connected';
+                    
+                    // Set up event listeners
+                    ethereum.on('accountsChanged', handleAccountsChanged);
+                    ethereum.on('chainChanged', () => window.location.reload());
+                    
+                    await updateUI();
+                }
+            } catch (error) {
+                console.error('Error checking connection:', error);
+            }
+        }
+
+        // Event handlers for voting
+        async function voteForA() {
+            try {
+                const tx = await contract.voteA();
+                showMessage('Voting for A... Please wait for transaction confirmation');
+                await tx.wait();
+                showMessage('Successfully voted for A!');
+                await updateUI();
+            } catch (error) {
+                console.error('Error voting A:', error);
+                showMessage('Error voting for A. Please try again.', true);
+            }
+        }
+
+        async function voteForB() {
+            try {
+                const tx = await contract.voteB();
+                showMessage('Voting for B... Please wait for transaction confirmation');
+                await tx.wait();
+                showMessage('Successfully voted for B!');
+                await updateUI();
+            } catch (error) {
+                console.error('Error voting B:', error);
+                showMessage('Error voting for B. Please try again.', true);
+            }
+        }
+
+        async function startVotingProcess() {
+            try {
+                const tx = await contract.startVoting();
+                showMessage('Starting voting... Please wait for transaction confirmation');
+                await tx.wait();
+                showMessage('Voting started successfully!');
+                await updateUI();
+            } catch (error) {
+                console.error('Error starting voting:', error);
+                showMessage('Error starting voting. Please try again.', true);
+            }
+        }
+
+        async function stopVotingProcess() {
+            const reset = document.getElementById('resetCheckbox').checked;
+            try {
+                const tx = await contract.stopVoting(reset);
+                showMessage('Stopping voting... Please wait for transaction confirmation');
+                await tx.wait();
+                showMessage(`Voting stopped successfully${reset ? ' and counts reset' : ''}!`);
+                await updateUI();
+            } catch (error) {
+                console.error('Error stopping voting:', error);
+                showMessage('Error stopping voting. Please try again.', true);
+            }
+        }
+
+        // Set up event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('connectButton').addEventListener('click', connectWallet);
+            document.getElementById('startVoting').addEventListener('click', startVotingProcess);
+            document.getElementById('stopVoting').addEventListener('click', stopVotingProcess);
+            document.getElementById('voteA').addEventListener('click', voteForA);
+            document.getElementById('voteB').addEventListener('click', voteForB);
+            
+            // Initialize the app
+            initApp();
+        });
+    </script>
+</body>
+</html>
